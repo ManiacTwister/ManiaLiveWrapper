@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manialive>
+  <sync_admins>true</sync_admins>
+  <use_xaseco_database>true</use_xaseco_database>
+</manialive>
