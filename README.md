@@ -3,6 +3,7 @@
 **This plugin bridge is created by ManiacTwister - The full copyright to everything in plugins/ManiaLiveWrapper/ remains to the original authors of the ManiaLive controller.**
 
 With this plugin you can run any ManiaLive plugin under XAseco.
+This is especially needed, if you wan't to run a MatchMaking server with XAseco. This plugin shouldn't increase the needed ressources too much, but when, then send me a line and i will look into this issue.
 
 ## Installation
 
