@@ -519,13 +519,13 @@ class Connection
 	{
 		return $this->execute(ucfirst(__FUNCTION__));
 	}
-	
+
 	/**
-	 * Set the ratios list for passing specific votes, extended version with parameters matching. 
-	 * The parameters, a boolean ReplaceAll (or else, only modify specified ratios, leaving the previous ones unmodified) 
-	 * and an array of structs {string Command, string Param, double Ratio}, 
-	 * ratio is in [0,1] or -1 for vote disabled. 
-	 * Param is matched against the vote parameters to make more specific ratios, leave empty to match all votes for the command. 
+	 * Set the ratios list for passing specific votes, extended version with parameters matching.
+	 * The parameters, a boolean ReplaceAll (or else, only modify specified ratios, leaving the previous ones unmodified)
+	 * and an array of structs {string Command, string Param, double Ratio},
+	 * ratio is in [0,1] or -1 for vote disabled.
+	 * Param is matched against the vote parameters to make more specific ratios, leave empty to match all votes for the command.
 	 * Only available to Admin.
 	 * @param bool $replaceAll
 	 * @param array[array[]]|Structures\VoteRatio[] $ratios
@@ -574,7 +574,7 @@ class Connection
 
 		return $this->execute(ucfirst(__FUNCTION__), array($replaceAll, $ratios), $multicall);
 	}
-	
+
 	/**
 	 * Get the current ratios for passing votes, extended version with parameters matching.
 	 * @return Structures\VoteRatio[]
@@ -871,6 +871,36 @@ class Connection
 	function getManialinkPageAnswers()
 	{
 		return $this->execute(ucfirst(__FUNCTION__));
+	}
+	
+	/**
+	 * Opens a link in the client with the specified players. 
+	 * The parameters are the login of the client to whom the link to open is sent, the link url, and the 'LinkType' 
+	 * (0 in the external browser, 1 in the internal manialink browser). 
+	 * Login can be a single login or a list of comma-separated logins. Only available to
+	 * @param Structures\Player|string|mixed[] $player
+	 * @param string $link
+	 * @param int $linkType
+	 * @param bool $multicall
+	 * @return bool
+	 * @throws InvalidArgumentException
+	 */
+	function sendOpenLink($player, $link, $linkType, $multicall = false)
+	{
+		if(!($login = $this->getLogins($player)))
+		{
+			throw new InvalidArgumentException('player must be set');
+		}
+		if(!is_string($link))
+		{
+			throw new InvalidArgumentException('link = '.print_r($link, true));
+		}
+		if($linkType !== 0 && $linkType !== 1)
+		{
+			throw new InvalidArgumentException('linkType = '.print_r($linkType, true));
+		}
+		
+		return $this->execute('SendOpenLinkToLogin', array($login, $link, $linkType), $multicall);
 	}
 
 	/**
@@ -1551,6 +1581,68 @@ class Connection
 
 		return $this->execute(ucfirst(__FUNCTION__), array($downloadRate, $uploadRate), $multicall);
 	}
+	
+	/**
+	 * Returns the list of tags and associated values set on this server. 
+	 * The list is an array of structures {string Name, string Value}.
+	 * Only available to Admin.
+	 * @return array
+	 */
+	function getServerTags()
+	{
+		return $this->execute(ucfirst(__FUNCTION__));
+	}
+	
+	/**
+	 * Set a tag and its value on the server. This method takes two parameters. 
+	 * The first parameter specifies the name of the tag, and the second one its value.  
+	 * Only available to Admin.
+	 * @param string $key
+	 * @param string $value
+	 * @param bool $multicall
+	 * @return bool
+	 * @throws InvalidArgumentException
+	 */
+	function setServerTag($key, $value, $multicall = false)
+	{
+		if(!is_string($key))
+		{
+			throw new InvalidArgumentException('key = '.print_r($key, true));
+		}
+		if(!is_string($value))
+		{
+			throw new InvalidArgumentException('value = '.print_r($value, true));
+		}
+		return $this->execute(ucfirst(__FUNCTION__), array($key, $value), $multicall);
+	}
+	
+	/**
+	 * Unset the tag with the specified name on the server. 
+	 * Only available to Admin.
+	 * @param string $key
+	 * @param bool $multicall
+	 * @return bool
+	 * @throws InvalidArgumentException
+	 */
+	function unsetServerTag($key, $multicall = false)
+	{
+		if(!is_string($key))
+		{
+			throw new InvalidArgumentException('key = '.print_r($key, true));
+		}
+		return $this->execute(ucfirst(__FUNCTION__), array($key), $multicall);
+	}
+	
+	/**
+	 * Reset all tags on the server. 
+	 * Only available to Admin.
+	 * @param bool $multicall
+	 * @return bool
+	 */
+	function resetServerTags($multicall = false)
+	{
+		return $this->execute(ucfirst(__FUNCTION__), array(), $multicall);
+	}
 
 	/**
 	 * Set a new server name in utf8 format.
@@ -1750,22 +1842,40 @@ class Connection
 	}
 
 	/**
-	 * Declare if the server is a lobby, the number and maximum number of players currently managed by it.
+	 * Declare if the server is a lobby, the number and maximum number of players currently managed by it, and the average level of the players.
 	 * Only available to Admin.
 	 * @param bool $isLobby
 	 * @param int $lobbyPlayers
 	 * @param int $maxPlayers
+	 * @param double $lobbyPlayersLevel
 	 * @param bool $multicall
 	 * @return bool
 	 */
-	function setLobbyInfo($isLobby, $lobbyPlayers, $maxPlayers, $multicall = false)
+	function setLobbyInfo($isLobby, $lobbyPlayers, $maxPlayers, $lobbyPlayersLevel, $multicall = false)
 	{
-		return $this->execute(ucfirst(__FUNCTION__), array($isLobby, $lobbyPlayers, $maxPlayers), $multicall);
+		if(!is_bool($isLobby))
+		{
+			throw new InvalidArgumentException('isLobby = '.print_r($isLobby, true));
+		}
+		if(!is_int($lobbyPlayers))
+		{
+			throw new InvalidArgumentException('lobbyPlayers = '.print_r($lobbyPlayers, true));
+		}
+		if(!is_int($maxPlayers))
+		{
+			throw new InvalidArgumentException('maxPlayers = '.print_r($maxPlayers, true));
+		}
+		if(!is_double($lobbyPlayersLevel))
+		{
+			throw new InvalidArgumentException('lobbyPlayersLevel = '.print_r($lobbyPlayersLevel, true));
+		}
+		return $this->execute(ucfirst(__FUNCTION__), array($isLobby, $lobbyPlayers, $maxPlayers, $lobbyPlayersLevel), $multicall);
 	}
 
 	/**
-	 * Get whether the server if a lobby, and the number of players currently managed by it.
-	 * The struct returned contains two fields IsLobby and LobbyPlayers.
+	 * Get whether the server if a lobby, the number and maximum number of players currently managed by it. 
+	 * The struct returned contains 4 fields IsLobby, LobbyPlayers, LobbyMaxPlayers, and LobbyPlayersLevel.
+	 * @return Structures\LobbyInfo
 	 */
 	function getLobbyInfo()
 	{
@@ -2131,9 +2241,9 @@ class Connection
 	{
 		return Structures\ServerOptions::fromArray($this->execute(ucfirst(__FUNCTION__)));
 	}
-	
+
 	/**
-	 * Set whether the players can choose their side or if the teams are forced by the server (using ForcePlayerTeam()). 
+	 * Set whether the players can choose their side or if the teams are forced by the server (using ForcePlayerTeam()).
 	 * Only available to Admin.
 	 * @param bool $enable
 	 * @param bool $multicall
@@ -2148,7 +2258,7 @@ class Connection
 		}
 		return $this->execute(ucfirst(__FUNCTION__), array($enable), $multicall);
 	}
-	
+
 	/**
 	 * Returns whether the players can choose their side or if the teams are forced by the server.
 	 * @return bool
@@ -2568,6 +2678,31 @@ class Connection
 	function setModeScriptSettings($rules, $multicall = false)
 	{
 		return $this->execute(ucfirst(__FUNCTION__), array($rules), $multicall);
+	}
+	
+	/**
+	 * Send commands to the mode script.
+	 * Only available to Admin.
+	 * @param array $commands
+	 * @param bool $multicall
+	 * @return bool
+	 */
+	function sendModeScriptCommands(array $commands, $multicall = false)
+	{
+		return $this->execute(ucfirst(__FUNCTION__), array($commands), $multicall);
+	}
+	
+	/**
+	 * Change the settings and send commands to the mode script. 
+	 * Only available to Admin.
+	 * @param array $settings
+	 * @param array $commands
+	 * @param bool $multicall
+	 * @return bool
+	 */
+	function setModeScriptSettingsAndCommands(array $settings, array $commands, $multicall = false)
+	{
+		return $this->execute(ucfirst(__FUNCTION__), array($settings, $commands), $multicall);
 	}
 
 	/**
@@ -3419,10 +3554,10 @@ class Connection
 				array('unused', 0., 'World', $teamName1, $teamColor1, $team1Country, $teamName2, $teamColor2, $team2Country),
 				$multicall);
 	}
-	
+
 	/**
-	 * Return Team info for a given clan (0 = no clan, 1, 2). 
-	 * The structure contains: name, zonePath, city, emblemUrl, huePrimary, hueSecondary, rGB, clubLinkUrl. 
+	 * Return Team info for a given clan (0 = no clan, 1, 2).
+	 * The structure contains: name, zonePath, city, emblemUrl, huePrimary, hueSecondary, rGB, clubLinkUrl.
 	 * Only available to Admin.
 	 * @param int $teamId
 	 * @return Structures\Team
@@ -3436,9 +3571,9 @@ class Connection
 		}
 		return Structures\Team::fromArray($this->execute(ucfirst(__FUNCTION__), array($teamId)));
 	}
-	
+
 	/**
-	 * Set the clublinks to use for the two clans. 
+	 * Set the clublinks to use for the two clans.
 	 * Only available to Admin.
 	 * @param string $team1ClubLink
 	 * @param string $team2ClubLink
@@ -3458,7 +3593,7 @@ class Connection
 		}
 		return $this->execute(ucfirst(__FUNCTION__), array($team1ClubLink, $team2ClubLink), $multicall);
 	}
-	
+
 	/**
 	 * Get the forced clublinks.
 	 * @return array
@@ -3467,9 +3602,9 @@ class Connection
 	{
 		return $this->execute(ucfirst(__FUNCTION__));
 	}
-	
+
 	/**
-	 * (debug tool) Connect a fake player to the server and returns the login. 
+	 * (debug tool) Connect a fake player to the server and returns the login.
 	 * Only available to Admin.
 	 * @param bool $multicall
 	 * @return string
@@ -3478,9 +3613,9 @@ class Connection
 	{
 		return $this->execute(ucfirst(__FUNCTION__), array(), $multicall);
 	}
-	
+
 	/**
-	 * (debug tool) Disconnect a fake player, or all the fake players if login is '*'. 
+	 * (debug tool) Disconnect a fake player, or all the fake players if login is '*'.
 	 * Only available to Admin.
 	 * @param string $fakePlayerLogin
 	 * @param bool $multicall
@@ -3494,6 +3629,18 @@ class Connection
 			throw new InvalidArgumentException('fakePlayerLogin = '.print_r($fakePlayerLogin, true));
 		}
 		return $this->execute(ucfirst(__FUNCTION__), array($fakePlayerLogin), $multicall);
+	}
+	
+	/**
+	 * Returns the token infos for a player. 
+	 * The returned structure is { TokenCost, CanPayToken }.
+	 * @param Structures\Player|string $player
+	 * @return array
+	 */
+	function getPlayerTokenInfos($player)
+	{
+		$login = $this->getLogin($player);
+		return (object) $this->execute(ucfirst(__FUNCTION__), array($login));
 	}
 
 	/**
@@ -3521,16 +3668,16 @@ class Connection
 	{
 		return $this->execute(ucfirst(__FUNCTION__));
 	}
-	
+
 	/**
-	 * Disable the automatic mesages when a player connects/disconnects from the server. 
+	 * Disable the automatic mesages when a player connects/disconnects from the server.
 	 * Only available to Admin.
 	 * @param bool $disable
 	 * @param bool $multicall
 	 * @return bool
 	 * @throws InvalidArgumentException
 	 */
-	function disableServiceAnnounces($disable, $multicall = false)
+	function disableServiceAnnounces($disable = true, $multicall = false)
 	{
 		if(!is_bool($disable))
 		{
@@ -3539,7 +3686,7 @@ class Connection
 
 		return $this->execute(ucfirst(__FUNCTION__), array($disable), $multicall);
 	}
-	
+
 	/**
 	 * Returns whether the automatic mesages are disabled.
 	 * @return bool
